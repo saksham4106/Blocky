@@ -1,51 +1,44 @@
 package io.github.saksham4106.blocky.engine.renderer;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import static org.lwjgl.opengl.GL20.*;
 
 public class Shader {
-    String vertexShaderSource = "#version 330 core\n" +
-            "layout (location = 0) in vec4 aColor;\n" +
-            "layout (location = 1) in vec3 aPosition;\n" +
-            "out vec4 fColor;\n" +
-            "void main()\n" +
-            "{\n" +
-            "    fColor = aColor;\n" +
-            "    gl_Position = vec4(aPosition, 1.0);\n" +
-            "}";
+    int shader;
+    public void compile(int SHADER_TYPE, String shaderPath){
+        try{
+            String shaderSource = readShader(shaderPath);
+            shader = glCreateShader(SHADER_TYPE);
+            glShaderSource(shader, shaderSource);
+            glCompileShader(shader);
 
-    String fragmentShaderSource = "#version 330\n" +
-            "out vec4 FragColor;\n" +
-            "in vec4 fColor;\n" +
-            "void main()\n" +
-            "{\n" +
-            "    FragColor = fColor;\n" +
-            "}";
-    int programId;
+            int success = glGetShaderi(shader, GL_COMPILE_STATUS);
+            if(success == GL_FALSE){
+                System.out.println("Shader Compilation at path " + shaderPath + " failed!");
+                System.out.println(glGetShaderInfoLog(shader, glGetShaderi(shader, GL_INFO_LOG_LENGTH)));
+                glDeleteShader(shader);
+                shader = Integer.MIN_VALUE;
+            }
 
-    public void compile(){
-        int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, vertexShaderSource);
-        glCompileShader(vertexShader);
+        } catch( IOException e){
+            System.out.println("Shader at path " + shaderPath  + " not found!");
+        }
 
-        System.out.println(glGetShaderInfoLog(vertexShader));
-
-        int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragmentShader, fragmentShaderSource);
-        glCompileShader(fragmentShader);
-
-        System.out.println(glGetShaderInfoLog(fragmentShader));
-
-        programId = glCreateProgram();
-        glAttachShader(programId, vertexShader);
-        glAttachShader(programId, fragmentShader);
-        glLinkProgram(programId);
-
-        System.out.println(glGetProgramInfoLog(programId));
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
     }
 
-    public void bind(){
-        glUseProgram(programId);
+    public void destroy(){
+        if(shader != Integer.MIN_VALUE){
+            glDeleteShader(shader);
+            shader = Integer.MIN_VALUE;
+        }
+    }
+
+    private String readShader(String filepath) throws IOException {
+        return new String(Files.readAllBytes(Paths.get(filepath)));
     }
 }

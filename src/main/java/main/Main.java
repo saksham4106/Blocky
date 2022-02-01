@@ -1,4 +1,4 @@
-package io.github.saksham4106.blocky;
+package main;
 
 import io.github.saksham4106.blocky.engine.Window;
 
